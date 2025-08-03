@@ -1,11 +1,12 @@
 import { useState, useRef } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Play, Download, Pause, Volume2 } from "lucide-react";
+import { Play, Download, Pause, Volume2, AlertCircle, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -26,6 +27,7 @@ export default function TtsInterface() {
   const [audioDuration, setAudioDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [quotaError, setQuotaError] = useState(false);
   
   const audioRef = useRef<HTMLAudioElement>(null);
   const { toast } = useToast();
@@ -57,12 +59,17 @@ export default function TtsInterface() {
     },
     onSuccess: (audioUrl) => {
       setAudioUrl(audioUrl);
+      setQuotaError(false);
       toast({
         title: "Speech Generated",
         description: "Your audio is ready to play!",
       });
     },
     onError: (error: any) => {
+      // Check if it's a quota error
+      if (error.message && error.message.includes("quota exceeded")) {
+        setQuotaError(true);
+      }
       toast({
         title: "Generation Failed",
         description: error.message || "Failed to generate speech. Please try again.",
@@ -180,6 +187,32 @@ export default function TtsInterface() {
 
   return (
     <Card className="bg-white rounded-2xl shadow-2xl p-8 md:p-12 text-navy-900 max-w-4xl mx-auto">
+      {/* Quota Error Alert */}
+      {quotaError && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>OpenAI API Quota Exceeded</AlertTitle>
+          <AlertDescription>
+            The OpenAI API key has reached its usage limit. To continue using 7Voice:
+            <ul className="list-disc list-inside mt-2 space-y-1">
+              <li>Add billing information to your OpenAI account</li>
+              <li>Purchase additional credits or upgrade your plan</li>
+              <li>Wait for your quota to reset (if on a free tier)</li>
+            </ul>
+            <div className="mt-3">
+              <a 
+                href="https://platform.openai.com/usage" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center text-turquoise-500 hover:text-turquoise-400 underline"
+              >
+                Check OpenAI Usage <ExternalLink className="ml-1 h-3 w-3" />
+              </a>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Text Input Area */}
         <div className="lg:col-span-2">

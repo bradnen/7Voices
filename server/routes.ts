@@ -56,6 +56,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           errors: error.errors 
         });
       }
+      
+      // Handle OpenAI API quota errors specifically
+      if (error.status === 429 && error.code === 'insufficient_quota') {
+        return res.status(429).json({ 
+          message: "OpenAI API quota exceeded. Please check your OpenAI account billing and add credits, or try again later." 
+        });
+      }
+      
+      // Handle other OpenAI API errors
+      if (error.status >= 400 && error.status < 500) {
+        return res.status(error.status).json({ 
+          message: `OpenAI API Error: ${error.message}` 
+        });
+      }
+      
       res.status(500).json({ 
         message: error.message || "Failed to generate speech" 
       });
@@ -121,6 +136,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.send(buffer);
     } catch (error: any) {
       console.error('Voice preview error:', error);
+      
+      // Handle OpenAI API quota errors specifically
+      if (error.status === 429 && error.code === 'insufficient_quota') {
+        return res.status(429).json({ 
+          message: "OpenAI API quota exceeded. Please check your OpenAI account billing and add credits, or try again later." 
+        });
+      }
+      
+      // Handle other OpenAI API errors
+      if (error.status >= 400 && error.status < 500) {
+        return res.status(error.status).json({ 
+          message: `OpenAI API Error: ${error.message}` 
+        });
+      }
+      
       res.status(500).json({ 
         message: error.message || "Failed to preview voice" 
       });

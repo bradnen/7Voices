@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertTtsRequestSchema } from "@shared/schema";
-import { setupAuth, requireAuth } from "./auth";
+// Removed auth imports
 import { z } from "zod";
 import Stripe from "stripe";
 
@@ -14,12 +14,11 @@ if (!ELEVENLABS_API_KEY) {
 
 // Initialize Stripe (with fallback for development)
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2023-10-16",
+  apiVersion: "2025-07-30.basil",
 }) : null;
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Setup authentication
-  setupAuth(app);
+  // Authentication removed
   
   // Generate speech from text
   app.post("/api/tts/generate", async (req, res) => {
@@ -228,7 +227,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/stripe/create-subscription", requireAuth, async (req: any, res) => {
+  app.post("/api/stripe/create-subscription", async (req: any, res) => {
     if (!stripe) {
       return res.status(501).json({ message: "Stripe not configured" });
     }
@@ -282,26 +281,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/stripe/subscription-status", requireAuth, async (req: any, res) => {
+  app.get("/api/stripe/subscription-status", async (req: any, res) => {
     if (!stripe) {
       return res.status(501).json({ message: "Stripe not configured" });
     }
 
     try {
-      const userId = req.user?.id;
-      const user = await storage.getUser(userId);
-      
-      if (!user?.stripeSubscriptionId) {
-        return res.json({ status: "none", plan: "free" });
-      }
-
-      const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
-      
+      // Simple subscription status without auth
       res.json({
-        status: subscription.status,
-        plan: user.subscriptionPlan || "free",
-        currentPeriodEnd: subscription.current_period_end,
-        cancelAtPeriodEnd: subscription.cancel_at_period_end
+        active: false,
+        status: 'inactive', 
+        plan: 'free',
+        currentPeriodEnd: null
       });
     } catch (error: any) {
       console.error("Subscription status error:", error);

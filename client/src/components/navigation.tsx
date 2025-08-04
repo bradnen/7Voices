@@ -1,6 +1,6 @@
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
-import AuthButton from "@/components/auth-button";
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -44,17 +44,34 @@ export default function Navigation() {
               >
                 Pricing
               </a>
-              <AuthButton />
             </div>
           </div>
-          
-          <div className="md:hidden">
-            <button 
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="text-gray-600 hover:text-purple-600"
-            >
-              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
+
+          <div className="flex items-center space-x-4">
+            <div className="hidden md:flex items-center space-x-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="border-gray-300 text-gray-700 hover:text-black hover:border-black"
+              >
+                Log in
+              </Button>
+              <Button 
+                size="sm"
+                className="bg-black text-white hover:bg-gray-800 rounded-lg"
+              >
+                Sign up
+              </Button>
+            </div>
+            
+            <div className="md:hidden">
+              <button 
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="text-gray-600 hover:text-black"
+              >
+                {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </button>
+            </div>
           </div>
         </div>
         
@@ -64,27 +81,46 @@ export default function Navigation() {
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200">
               <a 
                 href="#features" 
-                className="text-gray-600 hover:text-purple-600 block px-3 py-2 text-base font-medium"
+                className="text-gray-600 hover:text-black block px-3 py-2 text-base font-medium"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Features
+                Text to Speech
               </a>
               <a 
                 href="#pricing" 
-                className="text-gray-600 hover:text-purple-600 block px-3 py-2 text-base font-medium"
+                className="text-gray-600 hover:text-black block px-3 py-2 text-base font-medium"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Speech to Text
+              </a>
+              <a 
+                href="#about" 
+                className="text-gray-600 hover:text-black block px-3 py-2 text-base font-medium"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Voice Cloning
+              </a>
+              <a 
+                href="#pricing" 
+                className="text-gray-600 hover:text-black block px-3 py-2 text-base font-medium"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Pricing
               </a>
-              <a 
-                href="#about" 
-                className="text-gray-600 hover:text-purple-600 block px-3 py-2 text-base font-medium"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                About
-              </a>
-              <div className="mt-2">
-                <AuthButton />
+              <div className="mt-2 flex flex-col space-y-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="border-gray-300 text-gray-700 hover:text-black hover:border-black"
+                >
+                  Log in
+                </Button>
+                <Button 
+                  size="sm"
+                  className="bg-black text-white hover:bg-gray-800 rounded-lg"
+                >
+                  Sign up
+                </Button>
               </div>
             </div>
           </div>

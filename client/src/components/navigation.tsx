@@ -20,6 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { EmailLogin } from "./email-login";
+import { EmailSignup } from "./email-signup";
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -35,6 +36,7 @@ export default function Navigation() {
   });
 
   const [showEmailLogin, setShowEmailLogin] = useState(false);
+  const [showEmailSignup, setShowEmailSignup] = useState(false);
 
   return (
     <nav className="bg-white/80 backdrop-blur-md shadow-sm border-b border-gray-100 sticky top-0 z-50">
@@ -122,7 +124,7 @@ export default function Navigation() {
                   <Button 
                     size="sm"
                     className="bg-black text-white hover:bg-gray-800 rounded-lg"
-                    onClick={() => setShowEmailLogin(true)}
+                    onClick={() => setShowEmailSignup(true)}
                   >
                     Sign up
                   </Button>
@@ -193,7 +195,7 @@ export default function Navigation() {
                 <Button 
                   size="sm"
                   className="bg-black text-white hover:bg-gray-800 rounded-lg"
-                  onClick={() => setShowEmailLogin(true)}
+                  onClick={() => setShowEmailSignup(true)}
                 >
                   Sign up
                 </Button>
@@ -207,12 +209,25 @@ export default function Navigation() {
       <Dialog open={showEmailLogin} onOpenChange={setShowEmailLogin}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Welcome to 7Voice</DialogTitle>
+            <DialogTitle>Welcome Back</DialogTitle>
             <DialogDescription>
-              Sign in with your email to access premium features and save your voice generation history.
+              Sign in with your email to access your account and premium features.
             </DialogDescription>
           </DialogHeader>
           <EmailLogin onLoginSuccess={() => setShowEmailLogin(false)} />
+        </DialogContent>
+      </Dialog>
+
+      {/* Email Signup Dialog */}
+      <Dialog open={showEmailSignup} onOpenChange={setShowEmailSignup}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Join 7Voice</DialogTitle>
+            <DialogDescription>
+              Create your account to unlock premium text-to-speech features and save your generation history.
+            </DialogDescription>
+          </DialogHeader>
+          <EmailSignup onSignupSuccess={() => setShowEmailSignup(false)} />
         </DialogContent>
       </Dialog>
     </nav>

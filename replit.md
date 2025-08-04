@@ -1,8 +1,8 @@
-# 7Voice - AI Text-to-Speech Platform
+# 7Voices - AI Text-to-Speech Platform
 
 ## Overview
 
-7Voice is a modern text-to-speech application that transforms text into natural, human-like speech using OpenAI's advanced TTS API. The platform features a sleek web interface with voice customization options, real-time audio generation, and instant MP3 downloads. Built as a full-stack application with a React frontend and Express backend, it provides both free and premium tiers for different user needs.
+7Voices is a modern text-to-speech application that transforms text into natural, human-like speech using OpenAI's advanced TTS API. The platform features a sleek web interface with voice customization options, real-time audio generation, and instant MP3 downloads. Built as a full-stack application with a React frontend and Express backend, it provides both free and premium tiers for different user needs.
 
 ## User Preferences
 

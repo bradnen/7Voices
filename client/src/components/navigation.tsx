@@ -47,7 +47,7 @@ export default function Navigation() {
               <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">7V</span>
               </div>
-              <h1 className="text-2xl font-bold text-black">7Voice</h1>
+              <h1 className="text-2xl font-bold text-black">7Voices</h1>
             </div>
           </div>
           
@@ -222,7 +222,7 @@ export default function Navigation() {
       <Dialog open={showEmailSignup} onOpenChange={setShowEmailSignup}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Join 7Voice</DialogTitle>
+            <DialogTitle>Join 7Voices</DialogTitle>
             <DialogDescription>
               Create your account to unlock premium text-to-speech features and save your generation history.
             </DialogDescription>

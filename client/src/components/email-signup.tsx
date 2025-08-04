@@ -36,7 +36,7 @@ export function EmailSignup({ onSignupSuccess }: EmailSignupProps) {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       
       toast({
-        title: "Welcome to 7Voice!",
+        title: "Welcome to 7Voices!",
         description: "Your account has been created successfully",
       });
 
@@ -62,7 +62,7 @@ export function EmailSignup({ onSignupSuccess }: EmailSignupProps) {
           Create Account
         </CardTitle>
         <CardDescription>
-          Join 7Voice to start generating natural speech
+          Join 7Voices to start generating natural speech
         </CardDescription>
       </CardHeader>
       <CardContent>

@@ -62,7 +62,7 @@ export function EmailLogin({ onLoginSuccess }: EmailLoginProps) {
           Sign In
         </CardTitle>
         <CardDescription>
-          Enter your email to access 7Voice
+          Enter your email to access 7Voices
         </CardDescription>
       </CardHeader>
       <CardContent>

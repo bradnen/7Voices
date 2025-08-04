@@ -6,6 +6,7 @@ import { Slider } from "@/components/ui/slider";
 import { Play, Pause, Settings2, Download, Copy, RotateCcw, Volume2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
 
 interface Voice {
   id: string;
@@ -369,7 +370,32 @@ export default function ElevenLabsInterface() {
       {/* Powered by Section */}
       <div className="text-center mt-8">
         <p className="text-gray-600 mb-2">Powered by Eleven v3 (alpha)</p>
-        <p className="text-lg font-semibold text-gray-900">Experience the full Audio AI platform</p>
+        <p className="text-lg font-semibold text-gray-900 mb-4">Experience the full Audio AI platform</p>
+        
+        {/* Upgrade CTA */}
+        <div className="flex justify-center gap-4">
+          <Link href="/subscribe">
+            <Button 
+              className="bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 px-6 py-3 rounded-xl font-semibold"
+              data-testid="button-upgrade-pro"
+            >
+              🚀 Upgrade to Pro
+            </Button>
+          </Link>
+          <Link href="/subscribe">
+            <Button 
+              variant="outline"
+              className="border-2 border-gray-300 hover:border-black px-6 py-3 rounded-xl font-semibold"
+              data-testid="button-view-plans"
+            >
+              View All Plans
+            </Button>
+          </Link>
+        </div>
+        
+        <p className="text-sm text-gray-500 mt-3">
+          Unlock unlimited generations, premium voices, and advanced features
+        </p>
       </div>
     </div>
   );

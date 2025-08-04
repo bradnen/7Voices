@@ -63,12 +63,9 @@ export default function Navigation() {
               >
                 Voice Cloning
               </a>
-              <a 
-                href="#pricing" 
-                className="text-gray-600 hover:text-black px-3 py-2 text-sm font-medium transition-colors"
-              >
+              <Link href="/subscribe" className="text-gray-600 hover:text-black px-3 py-2 text-sm font-medium transition-colors">
                 Pricing
-              </a>
+              </Link>
             </div>
           </div>
 
@@ -124,6 +121,14 @@ export default function Navigation() {
                   >
                     Sign up
                   </Button>
+                  <Link href="/subscribe">
+                    <Button 
+                      size="sm"
+                      className="bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 rounded-lg"
+                    >
+                      Upgrade Pro
+                    </Button>
+                  </Link>
                 </>
               )}
             </div>

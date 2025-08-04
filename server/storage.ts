@@ -9,6 +9,12 @@ export interface IStorage {
   getUserByGoogleId(googleId: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   upsertUser(user: InsertUser): Promise<User>;
+  updateUserStripeInfo(id: string, stripeInfo: {
+    stripeCustomerId?: string;
+    stripeSubscriptionId?: string;
+    subscriptionStatus?: string;
+    subscriptionPlan?: string;
+  }): Promise<User>;
   createTtsRequest(request: InsertTtsRequest): Promise<TtsRequest>;
   getTtsRequest(id: string): Promise<TtsRequest | undefined>;
 }
@@ -48,6 +54,23 @@ export class DatabaseStorage implements IStorage {
           updatedAt: new Date(),
         },
       })
+      .returning();
+    return user;
+  }
+
+  async updateUserStripeInfo(id: string, stripeInfo: {
+    stripeCustomerId?: string;
+    stripeSubscriptionId?: string;
+    subscriptionStatus?: string;
+    subscriptionPlan?: string;
+  }): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({
+        ...stripeInfo,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, id))
       .returning();
     return user;
   }

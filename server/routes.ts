@@ -10,6 +10,11 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || process.env.OPENAI_KEY || "sk-test-key"
 });
 
+// Initialize Stripe (with fallback for development)
+const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: "2023-10-16",
+}) : null;
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   setupAuth(app);
@@ -158,6 +163,111 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         message: error.message || "Failed to preview voice" 
       });
+    }
+  });
+
+  // Stripe payment routes
+  app.post("/api/stripe/create-payment-intent", async (req, res) => {
+    if (!stripe) {
+      return res.status(501).json({ message: "Stripe not configured" });
+    }
+
+    try {
+      const { amount, plan } = req.body;
+      
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount * 100), // Convert to cents
+        currency: "usd",
+        metadata: {
+          plan: plan || "pro"
+        }
+      });
+
+      res.json({ clientSecret: paymentIntent.client_secret });
+    } catch (error: any) {
+      console.error("Payment intent creation error:", error);
+      res.status(500).json({ message: "Error creating payment intent: " + error.message });
+    }
+  });
+
+  app.post("/api/stripe/create-subscription", requireAuth, async (req: any, res) => {
+    if (!stripe) {
+      return res.status(501).json({ message: "Stripe not configured" });
+    }
+
+    try {
+      const { priceId } = req.body;
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      // Get or create customer
+      let user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      let customerId = user.stripeCustomerId;
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: user.email ?? undefined,
+          metadata: { userId }
+        });
+        customerId = customer.id;
+        await storage.updateUserStripeInfo(userId, { stripeCustomerId: customerId });
+      }
+
+      // Create subscription
+      const subscription = await stripe.subscriptions.create({
+        customer: customerId,
+        items: [{ price: priceId }],
+        payment_behavior: 'default_incomplete',
+        expand: ['latest_invoice.payment_intent'],
+      });
+
+      // Update user with subscription info
+      await storage.updateUserStripeInfo(userId, {
+        stripeSubscriptionId: subscription.id,
+        subscriptionStatus: subscription.status,
+        subscriptionPlan: priceId.includes('pro') ? 'pro' : 'premium'
+      });
+
+      res.json({
+        subscriptionId: subscription.id,
+        clientSecret: (subscription.latest_invoice as any)?.payment_intent?.client_secret,
+      });
+    } catch (error: any) {
+      console.error("Subscription creation error:", error);
+      res.status(500).json({ message: "Error creating subscription: " + error.message });
+    }
+  });
+
+  app.get("/api/stripe/subscription-status", requireAuth, async (req: any, res) => {
+    if (!stripe) {
+      return res.status(501).json({ message: "Stripe not configured" });
+    }
+
+    try {
+      const userId = req.user?.id;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.stripeSubscriptionId) {
+        return res.json({ status: "none", plan: "free" });
+      }
+
+      const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
+      
+      res.json({
+        status: subscription.status,
+        plan: user.subscriptionPlan || "free",
+        currentPeriodEnd: subscription.current_period_end,
+        cancelAtPeriodEnd: subscription.cancel_at_period_end
+      });
+    } catch (error: any) {
+      console.error("Subscription status error:", error);
+      res.status(500).json({ message: "Error fetching subscription status" });
     }
   });
 

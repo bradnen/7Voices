@@ -47,6 +47,10 @@ export const users = pgTable("users", {
   name: varchar("name"),
   profileImage: varchar("profile_image"),
   googleId: varchar("google_id").unique(),
+  stripeCustomerId: varchar("stripe_customer_id"),
+  stripeSubscriptionId: varchar("stripe_subscription_id"),
+  subscriptionStatus: varchar("subscription_status").default("free"), // free, active, canceled, past_due
+  subscriptionPlan: varchar("subscription_plan").default("free"), // free, pro, premium
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -56,6 +60,10 @@ export const insertUserSchema = createInsertSchema(users).pick({
   name: true,
   profileImage: true,
   googleId: true,
+  stripeCustomerId: true,
+  stripeSubscriptionId: true,
+  subscriptionStatus: true,
+  subscriptionPlan: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

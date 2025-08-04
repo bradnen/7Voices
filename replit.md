@@ -27,11 +27,14 @@ Preferred communication style: Simple, everyday language.
 
 ### Data Models
 - **TTS Requests**: Stores text input, voice selection, speed, pitch, and tone parameters
-- **Users**: Basic user management with username/password authentication (schema defined but not actively used)
+- **Users**: Complete user management with Google OAuth authentication and Stripe subscription data
 - **Voice Mapping**: Hardcoded mapping between user-friendly voice names and OpenAI voice IDs
+- **Subscriptions**: User subscription status, Stripe customer/subscription IDs, and plan information
 
 ### API Design
-- **RESTful Endpoints**: `/api/tts/generate` for speech synthesis
+- **TTS Endpoints**: `/api/tts/generate` for speech synthesis, `/api/tts/voices` for voice options
+- **Authentication**: `/api/auth/google` for OAuth login, `/api/auth/user` for session management
+- **Payment Processing**: `/api/stripe/create-subscription`, `/api/stripe/subscription-status` for Stripe integration
 - **Request/Response**: JSON-based API with proper error handling and validation
 - **Audio Delivery**: Direct MP3 streaming with appropriate headers for file downloads
 
@@ -52,6 +55,8 @@ Preferred communication style: Simple, everyday language.
 ### Core Services
 - **OpenAI API**: Text-to-speech generation using the OpenAI TTS API with API key authentication
 - **Neon Database**: PostgreSQL database hosting for production data persistence
+- **Stripe**: Payment processing for Pro ($9.99/month) and Premium ($19.99/month) subscription plans
+- **Google OAuth**: User authentication and sign-in functionality
 
 ### UI and Styling
 - **Radix UI**: Comprehensive component library for accessible, unstyled components

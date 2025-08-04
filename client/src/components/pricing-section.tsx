@@ -58,6 +58,8 @@ export default function PricingSection() {
             <Button 
               variant="secondary" 
               className="w-full py-3 font-semibold"
+              onClick={() => window.location.href = '/'}
+              data-testid="get-started-free"
             >
               Get Started Free
             </Button>
@@ -86,6 +88,8 @@ export default function PricingSection() {
             <Button 
               variant="secondary"
               className="w-full bg-white text-turquoise-500 py-3 font-semibold hover:bg-gray-100"
+              onClick={() => window.location.href = '/subscribe?plan=premium'}
+              data-testid="subscribe-premium"
             >
               Start Premium Trial
             </Button>

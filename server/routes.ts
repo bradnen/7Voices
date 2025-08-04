@@ -362,6 +362,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         user = await storage.createUser({
           email,
           username: email.split('@')[0],
+          name: email.split('@')[0],
           subscriptionPlan: "free",
           subscriptionStatus: "inactive"
         });

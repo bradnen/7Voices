@@ -45,6 +45,8 @@ export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: varchar("username"),
   email: varchar("email").unique().notNull(),
+  name: varchar("name"), // Maps to existing 'name' column
+  profileImage: varchar("profile_image"), // Maps to existing 'profile_image' column
   displayName: varchar("display_name"),
   avatarUrl: varchar("avatar_url"),
   subscriptionPlan: varchar("subscription_plan").default("free"),
@@ -58,6 +60,8 @@ export const users = pgTable("users", {
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   email: true,
+  name: true,
+  profileImage: true,
   displayName: true,
   avatarUrl: true,
   subscriptionPlan: true,

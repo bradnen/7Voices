@@ -110,9 +110,7 @@ export default function Dashboard() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link href="/">
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                7Voices
-              </h1>
+              <img src="/logo.svg" alt="7Voices" className="h-10 w-auto" />
             </Link>
             <Button
               variant="outline"

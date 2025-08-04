@@ -20,6 +20,9 @@ Preferred communication style: Simple, everyday language.
 - Added automatic redirect to dashboard after successful subscription payment
 - Implemented webhook handling for subscription status updates
 - Added SMS notifications to DTAC number after successful payments
+- Enhanced session persistence with 7-day rolling sessions and improved metadata tracking
+- Created professional animated SVG logos (logo.svg and logo-icon.svg) with dynamic sound wave visualizations
+- Integrated logos throughout navigation, dashboard, and main interface components
 
 ## System Architecture
 

@@ -15,9 +15,10 @@ export function setupAuth(app: Express) {
     cookie: {
       secure: false, // Set to true in production with HTTPS
       httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days for better persistence
       sameSite: 'lax'
-    }
+    },
+    rolling: true // Reset expiration on each request
   }));
 }
 
@@ -33,6 +34,9 @@ export async function requireAuth(req: any, res: any, next: any) {
     if (!user) {
       return res.status(401).json({ message: "Authentication required" });
     }
+    
+    // Update last activity for session maintenance
+    (req.session as any).lastActivity = new Date().toISOString();
     
     req.user = user;
     next();

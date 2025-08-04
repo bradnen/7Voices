@@ -393,8 +393,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid email or password" });
       }
 
-      // Set session
+      // Set session data with metadata for persistence
       (req.session as any).userId = user.id;
+      (req.session as any).lastActivity = new Date().toISOString();
+      (req.session as any).loginTime = new Date().toISOString();
       
       // Save session and wait for completion
       await new Promise<void>((resolve, reject) => {
@@ -403,7 +405,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.error("Session save error:", err);
             reject(err);
           } else {
-            console.log("Session saved successfully for user:", user.id);
             resolve();
           }
         });
@@ -448,8 +449,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         subscriptionStatus: "inactive"
       });
 
-      // Set session
+      // Set session data with metadata for persistence
       (req.session as any).userId = user.id;
+      (req.session as any).lastActivity = new Date().toISOString();
+      (req.session as any).signupTime = new Date().toISOString();
       
       // Save session and wait for completion
       await new Promise<void>((resolve, reject) => {
@@ -458,7 +461,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.error("Session save error:", err);
             reject(err);
           } else {
-            console.log("Session saved successfully for user:", user.id);
             resolve();
           }
         });

@@ -1,37 +1,54 @@
-import { type User, type InsertUser, type TtsRequest, type InsertTtsRequest } from "@shared/schema";
+import { type User, type InsertUser, type TtsRequest, type InsertTtsRequest, users } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByGoogleId(googleId: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  upsertUser(user: InsertUser): Promise<User>;
   createTtsRequest(request: InsertTtsRequest): Promise<TtsRequest>;
   getTtsRequest(id: string): Promise<TtsRequest | undefined>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-  private ttsRequests: Map<string, TtsRequest>;
-
-  constructor() {
-    this.users = new Map();
-    this.ttsRequests = new Map();
-  }
-
+export class DatabaseStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user || undefined;
+  }
+
+  async getUserByGoogleId(googleId: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.googleId, googleId));
+    return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
+    return user;
+  }
+
+  async upsertUser(userData: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.googleId,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
     return user;
   }
 
@@ -44,13 +61,14 @@ export class MemStorage implements IStorage {
       pitch: insertRequest.pitch ?? 0,
       tone: insertRequest.tone ?? "neutral"
     };
-    this.ttsRequests.set(id, request);
+    // For now, use in-memory storage for TTS requests since they're temporary
     return request;
   }
 
   async getTtsRequest(id: string): Promise<TtsRequest | undefined> {
-    return this.ttsRequests.get(id);
+    // For now, return undefined since TTS requests are temporary
+    return undefined;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

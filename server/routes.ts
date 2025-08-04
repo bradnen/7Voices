@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertTtsRequestSchema } from "@shared/schema";
+import { setupAuth, requireAuth } from "./auth";
 import OpenAI from "openai";
 import { z } from "zod";
 
@@ -10,6 +11,9 @@ const openai = new OpenAI({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Setup authentication
+  setupAuth(app);
+  
   // Generate speech from text
   app.post("/api/tts/generate", async (req, res) => {
     try {

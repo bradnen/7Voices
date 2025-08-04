@@ -336,8 +336,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         active: subscription.status === 'active',
         status: subscription.status,
         plan: user.subscriptionPlan || "free",
-        currentPeriodEnd: subscription.current_period_end,
-        cancelAtPeriodEnd: subscription.cancel_at_period_end
+        currentPeriodEnd: (subscription as any).current_period_end,
+        cancelAtPeriodEnd: (subscription as any).cancel_at_period_end
       });
     } catch (error: any) {
       console.error("Subscription status error:", error);

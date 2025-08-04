@@ -11,10 +11,10 @@ export default function Navigation() {
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
             <div className="flex-shrink-0 flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-violet-600 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">7V</span>
               </div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-violet-600 bg-clip-text text-transparent">7Voice</h1>
+              <h1 className="text-2xl font-bold text-black">7Voice</h1>
             </div>
           </div>
           
@@ -22,21 +22,27 @@ export default function Navigation() {
             <div className="ml-10 flex items-baseline space-x-8">
               <a 
                 href="#features" 
-                className="text-gray-600 hover:text-purple-600 px-3 py-2 text-sm font-medium transition-colors"
+                className="text-gray-600 hover:text-black px-3 py-2 text-sm font-medium transition-colors"
               >
-                Features
+                Text to Speech
               </a>
               <a 
                 href="#pricing" 
-                className="text-gray-600 hover:text-purple-600 px-3 py-2 text-sm font-medium transition-colors"
+                className="text-gray-600 hover:text-black px-3 py-2 text-sm font-medium transition-colors"
               >
-                Pricing
+                Speech to Text
               </a>
               <a 
                 href="#about" 
-                className="text-gray-600 hover:text-purple-600 px-3 py-2 text-sm font-medium transition-colors"
+                className="text-gray-600 hover:text-black px-3 py-2 text-sm font-medium transition-colors"
               >
-                About
+                Voice Cloning
+              </a>
+              <a 
+                href="#pricing" 
+                className="text-gray-600 hover:text-black px-3 py-2 text-sm font-medium transition-colors"
+              >
+                Pricing
               </a>
               <AuthButton />
             </div>

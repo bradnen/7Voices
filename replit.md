@@ -8,6 +8,13 @@
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+- Switched from GitHub OAuth to email-based authentication (August 4, 2025)
+- Renamed application from "7Voice" to "7Voices" throughout the project
+- Added automatic redirect to dashboard after successful login/signup
+- Fixed database schema compatibility with existing columns
+
 ## System Architecture
 
 ### Frontend Architecture

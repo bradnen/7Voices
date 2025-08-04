@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useLocation } from "wouter";
 
 interface EmailLoginProps {
   onLoginSuccess?: () => void;
@@ -14,6 +15,7 @@ export function EmailLogin({ onLoginSuccess }: EmailLoginProps) {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,6 +45,11 @@ export function EmailLogin({ onLoginSuccess }: EmailLoginProps) {
       if (onLoginSuccess) {
         onLoginSuccess();
       }
+
+      // Redirect to dashboard after successful login
+      setTimeout(() => {
+        setLocation("/dashboard");
+      }, 500);
     } catch (error: any) {
       toast({
         title: "Login Failed",

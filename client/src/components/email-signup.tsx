@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useLocation } from "wouter";
 
 interface EmailSignupProps {
   onSignupSuccess?: () => void;
@@ -14,6 +15,7 @@ export function EmailSignup({ onSignupSuccess }: EmailSignupProps) {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,6 +45,11 @@ export function EmailSignup({ onSignupSuccess }: EmailSignupProps) {
       if (onSignupSuccess) {
         onSignupSuccess();
       }
+
+      // Redirect to dashboard after successful signup
+      setTimeout(() => {
+        setLocation("/dashboard");
+      }, 500);
     } catch (error: any) {
       toast({
         title: "Signup Failed",

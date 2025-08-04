@@ -40,30 +40,32 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// User storage table with Google OAuth support
+// User storage table with GitHub OAuth support
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: varchar("email").unique(),
-  name: varchar("name"),
-  profileImage: varchar("profile_image"),
-  googleId: varchar("google_id").unique(),
+  githubId: varchar("github_id").unique(),
+  username: varchar("username"),
+  email: varchar("email"),
+  displayName: varchar("display_name"),
+  avatarUrl: varchar("avatar_url"),
+  subscriptionPlan: varchar("subscription_plan").default("free"),
+  subscriptionStatus: varchar("subscription_status").default("inactive"),
   stripeCustomerId: varchar("stripe_customer_id"),
   stripeSubscriptionId: varchar("stripe_subscription_id"),
-  subscriptionStatus: varchar("subscription_status").default("free"), // free, active, canceled, past_due
-  subscriptionPlan: varchar("subscription_plan").default("free"), // free, pro, premium
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
+  githubId: true,
+  username: true,
   email: true,
-  name: true,
-  profileImage: true,
-  googleId: true,
+  displayName: true,
+  avatarUrl: true,
+  subscriptionPlan: true,
+  subscriptionStatus: true,
   stripeCustomerId: true,
   stripeSubscriptionId: true,
-  subscriptionStatus: true,
-  subscriptionPlan: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

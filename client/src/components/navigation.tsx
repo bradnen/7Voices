@@ -1,9 +1,34 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Menu, X, Github, User, LogOut } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { Link } from "wouter";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, isAuthenticated, isLoading } = useAuth();
+  const queryClient = useQueryClient();
+
+  const logoutMutation = useMutation({
+    mutationFn: () => apiRequest("POST", "/api/auth/logout"),
+    onSuccess: () => {
+      queryClient.clear();
+      window.location.href = "/";
+    },
+  });
+
+  const handleSignIn = () => {
+    window.location.href = "/api/auth/github";
+  };
 
   return (
     <nav className="bg-white/80 backdrop-blur-md shadow-sm border-b border-gray-100 sticky top-0 z-50">
@@ -49,19 +74,58 @@ export default function Navigation() {
 
           <div className="flex items-center space-x-4">
             <div className="hidden md:flex items-center space-x-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="border-gray-300 text-gray-700 hover:text-black hover:border-black"
-              >
-                Log in
-              </Button>
-              <Button 
-                size="sm"
-                className="bg-black text-white hover:bg-gray-800 rounded-lg"
-              >
-                Sign up
-              </Button>
+              {isLoading ? (
+                <div className="w-8 h-8 animate-spin border-2 border-gray-300 border-t-black rounded-full" />
+              ) : isAuthenticated && user ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="flex items-center gap-2 p-2">
+                      <Avatar className="w-8 h-8">
+                        <AvatarImage src={user.avatarUrl || undefined} alt={user.displayName || "User"} />
+                        <AvatarFallback>
+                          {user.displayName?.charAt(0) || user.username?.charAt(0) || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm font-medium">{user.displayName || user.username}</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <Link href="/dashboard">
+                      <DropdownMenuItem className="cursor-pointer">
+                        <User className="w-4 h-4 mr-2" />
+                        Dashboard
+                      </DropdownMenuItem>
+                    </Link>
+                    <DropdownMenuItem 
+                      onClick={() => logoutMutation.mutate()}
+                      disabled={logoutMutation.isPending}
+                      className="cursor-pointer text-red-600"
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      {logoutMutation.isPending ? "Signing out..." : "Sign out"}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="border-gray-300 text-gray-700 hover:text-black hover:border-black"
+                    onClick={handleSignIn}
+                  >
+                    <Github className="w-4 h-4 mr-2" />
+                    Log in
+                  </Button>
+                  <Button 
+                    size="sm"
+                    className="bg-black text-white hover:bg-gray-800 rounded-lg"
+                    onClick={handleSignIn}
+                  >
+                    Sign up
+                  </Button>
+                </>
+              )}
             </div>
             
             <div className="md:hidden">

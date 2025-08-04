@@ -1,8 +1,16 @@
-// Simple auth hook that returns no authentication
+import { useQuery } from "@tanstack/react-query";
+import type { User } from "@shared/schema";
+
 export function useAuth() {
+  const { data: user, isLoading, error } = useQuery<User>({
+    queryKey: ["/api/auth/user"],
+    retry: false,
+  });
+
   return {
-    user: null,
-    isLoading: false,
-    isAuthenticated: false,
+    user,
+    isLoading,
+    isAuthenticated: !!user,
+    error,
   };
 }

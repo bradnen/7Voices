@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
-  getUserByGoogleId(googleId: string): Promise<User | undefined>;
+  getUserByGithubId(githubId: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   upsertUser(user: InsertUser): Promise<User>;
   updateUserStripeInfo(id: string, stripeInfo: {
@@ -17,6 +17,7 @@ export interface IStorage {
   }): Promise<User>;
   createTtsRequest(request: InsertTtsRequest): Promise<TtsRequest>;
   getTtsRequest(id: string): Promise<TtsRequest | undefined>;
+  getTtsRequests(): Promise<TtsRequest[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -30,8 +31,8 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
-  async getUserByGoogleId(googleId: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.googleId, googleId));
+  async getUserByGithubId(githubId: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.githubId, githubId));
     return user || undefined;
   }
 
@@ -48,7 +49,7 @@ export class DatabaseStorage implements IStorage {
       .insert(users)
       .values(userData)
       .onConflictDoUpdate({
-        target: users.googleId,
+        target: users.githubId,
         set: {
           ...userData,
           updatedAt: new Date(),
@@ -91,6 +92,11 @@ export class DatabaseStorage implements IStorage {
   async getTtsRequest(id: string): Promise<TtsRequest | undefined> {
     // For now, return undefined since TTS requests are temporary
     return undefined;
+  }
+
+  async getTtsRequests(): Promise<TtsRequest[]> {
+    // For now, return empty array since TTS requests are temporary
+    return [];
   }
 }
 

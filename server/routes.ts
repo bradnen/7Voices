@@ -3,12 +3,14 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertTtsRequestSchema } from "@shared/schema";
 import { setupAuth, requireAuth } from "./auth";
-import OpenAI from "openai";
 import { z } from "zod";
+import Stripe from "stripe";
 
-const openai = new OpenAI({ 
-  apiKey: process.env.OPENAI_API_KEY || process.env.OPENAI_KEY || "sk-test-key"
-});
+// ElevenLabs API configuration
+const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
+if (!ELEVENLABS_API_KEY) {
+  console.warn("ELEVENLABS_API_KEY not found, TTS generation will not work");
+}
 
 // Initialize Stripe (with fallback for development)
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {
@@ -27,28 +29,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Store the request
       const ttsRequest = await storage.createTtsRequest(validatedData);
       
-      // Map voice names to OpenAI voice IDs
+      // Map voice names to ElevenLabs voice IDs
       const voiceMap: Record<string, string> = {
-        "Sarah - Professional Female": "nova",
-        "Marcus - Warm Male": "onyx", 
-        "Emma - Energetic Female": "shimmer",
-        "David - Deep Male": "fable",
-        "Luna - Soft Female": "alloy",
-        "Alex - Neutral": "echo"
+        "Rachel - Professional Female": "21m00Tcm4TlvDq8ikWAM",
+        "Drew - Warm Male": "29vD33N1CtxCmqQRPOHJ", 
+        "Clyde - Middle Aged Male": "2EiwWnXFnvU5JabPnv8n",
+        "Bella - Young Female": "EXAVITQu4vr4xnSDxMaL",
+        "Antoni - Well-Rounded Male": "ErXwobaYiN019PkySvjV",
+        "Elli - Emotional Female": "MF3mGyEYCl7XYWbV9V6O",
+        "Josh - Deep Male": "TxGEqnHWrfWFTfGW9XjX",
+        "Arnold - Crisp Male": "VR6AewLTigWG4xSOukaG",
+        "Adam - Narration Male": "pNInz6obpgDQGcFmaJgB",
+        "Sam - Raspy Male": "yoZ06aMxZJJ28mfd3POQ"
       };
       
-      const openaiVoice = voiceMap[validatedData.voice] || "alloy";
+      const voiceId = voiceMap[validatedData.voice] || "21m00Tcm4TlvDq8ikWAM";
       
-      // Generate speech using OpenAI TTS
-      // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-      const mp3 = await openai.audio.speech.create({
-        model: "tts-1",
-        voice: openaiVoice as any,
-        input: validatedData.text,
-        speed: validatedData.speed || 1.0,
+      if (!ELEVENLABS_API_KEY) {
+        throw new Error("ElevenLabs API key not configured");
+      }
+      
+      // Generate speech using ElevenLabs API
+      const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'audio/mpeg',
+          'Content-Type': 'application/json',
+          'xi-api-key': ELEVENLABS_API_KEY
+        },
+        body: JSON.stringify({
+          text: validatedData.text,
+          model_id: 'eleven_monolingual_v1',
+          voice_settings: {
+            stability: 0.5,
+            similarity_boost: 0.75,
+            style: 0.0,
+            use_speaker_boost: true
+          }
+        })
       });
 
-      const buffer = Buffer.from(await mp3.arrayBuffer());
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`ElevenLabs API error: ${response.status} ${errorText}`);
+      }
+
+      const buffer = Buffer.from(await response.arrayBuffer());
       
       res.set({
         'Content-Type': 'audio/mpeg',
@@ -66,17 +92,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Handle OpenAI API quota errors specifically
-      if (error.status === 429 && error.code === 'insufficient_quota') {
+      // Handle ElevenLabs API errors
+      if (error.message?.includes('ElevenLabs API error')) {
         return res.status(429).json({ 
-          message: "OpenAI API quota exceeded. Please check your OpenAI account billing and add credits, or try again later." 
-        });
-      }
-      
-      // Handle other OpenAI API errors
-      if (error.status >= 400 && error.status < 500) {
-        return res.status(error.status).json({ 
-          message: `OpenAI API Error: ${error.message}` 
+          message: "ElevenLabs API error. Please check your API key and quota, or try again later." 
         });
       }
       
@@ -90,12 +109,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/tts/voices", async (req, res) => {
     try {
       const voices = [
-        { id: "Sarah - Professional Female", name: "Sarah", description: "Professional Female" },
-        { id: "Marcus - Warm Male", name: "Marcus", description: "Warm Male" },
-        { id: "Emma - Energetic Female", name: "Emma", description: "Energetic Female" },
-        { id: "David - Deep Male", name: "David", description: "Deep Male" },
-        { id: "Luna - Soft Female", name: "Luna", description: "Soft Female" },
-        { id: "Alex - Neutral", name: "Alex", description: "Neutral" }
+        { id: "Rachel - Professional Female", name: "Rachel", description: "Professional Female", category: "Professional" },
+        { id: "Drew - Warm Male", name: "Drew", description: "Warm Male", category: "Conversational" },
+        { id: "Clyde - Middle Aged Male", name: "Clyde", description: "Middle Aged Male", category: "Mature" },
+        { id: "Bella - Young Female", name: "Bella", description: "Young Female", category: "Youthful" },
+        { id: "Antoni - Well-Rounded Male", name: "Antoni", description: "Well-Rounded Male", category: "Versatile" },
+        { id: "Elli - Emotional Female", name: "Elli", description: "Emotional Female", category: "Expressive" },
+        { id: "Josh - Deep Male", name: "Josh", description: "Deep Male", category: "Authoritative" },
+        { id: "Arnold - Crisp Male", name: "Arnold", description: "Crisp Male", category: "Clear" },
+        { id: "Adam - Narration Male", name: "Adam", description: "Narration Male", category: "Storytelling" },
+        { id: "Sam - Raspy Male", name: "Sam", description: "Raspy Male", category: "Character" }
       ];
       
       res.json(voices);
@@ -107,7 +130,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Preview voice with sample text
+  // Preview voice with sample text using ElevenLabs
   app.post("/api/tts/preview", async (req, res) => {
     try {
       const { voice } = req.body;
@@ -116,26 +139,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Voice is required" });
       }
       
+      if (!ELEVENLABS_API_KEY) {
+        return res.status(501).json({ message: "ElevenLabs API key not configured" });
+      }
+      
       const voiceMap: Record<string, string> = {
-        "Sarah - Professional Female": "nova",
-        "Marcus - Warm Male": "onyx", 
-        "Emma - Energetic Female": "shimmer",
-        "David - Deep Male": "fable",
-        "Luna - Soft Female": "alloy",
-        "Alex - Neutral": "echo"
+        "Rachel - Professional Female": "21m00Tcm4TlvDq8ikWAM",
+        "Drew - Warm Male": "29vD33N1CtxCmqQRPOHJ", 
+        "Clyde - Middle Aged Male": "2EiwWnXFnvU5JabPnv8n",
+        "Bella - Young Female": "EXAVITQu4vr4xnSDxMaL",
+        "Antoni - Well-Rounded Male": "ErXwobaYiN019PkySvjV",
+        "Elli - Emotional Female": "MF3mGyEYCl7XYWbV9V6O",
+        "Josh - Deep Male": "TxGEqnHWrfWFTfGW9XjX",
+        "Arnold - Crisp Male": "VR6AewLTigWG4xSOukaG",
+        "Adam - Narration Male": "pNInz6obpgDQGcFmaJgB",
+        "Sam - Raspy Male": "yoZ06aMxZJJ28mfd3POQ"
       };
       
-      const openaiVoice = voiceMap[voice] || "alloy";
+      const voiceId = voiceMap[voice] || "21m00Tcm4TlvDq8ikWAM";
       const sampleText = "Hello! This is a preview of my voice. I hope you like how I sound.";
       
-      const mp3 = await openai.audio.speech.create({
-        model: "tts-1",
-        voice: openaiVoice as any,
-        input: sampleText,
-        speed: 1.0,
+      const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'audio/mpeg',
+          'Content-Type': 'application/json',
+          'xi-api-key': ELEVENLABS_API_KEY
+        },
+        body: JSON.stringify({
+          text: sampleText,
+          model_id: 'eleven_monolingual_v1',
+          voice_settings: {
+            stability: 0.5,
+            similarity_boost: 0.75
+          }
+        })
       });
 
-      const buffer = Buffer.from(await mp3.arrayBuffer());
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`ElevenLabs API error: ${response.status} ${errorText}`);
+      }
+
+      const buffer = Buffer.from(await response.arrayBuffer());
       
       res.set({
         'Content-Type': 'audio/mpeg',
@@ -146,17 +192,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('Voice preview error:', error);
       
-      // Handle OpenAI API quota errors specifically
-      if (error.status === 429 && error.code === 'insufficient_quota') {
+      if (error.message?.includes('ElevenLabs API error')) {
         return res.status(429).json({ 
-          message: "OpenAI API quota exceeded. Please check your OpenAI account billing and add credits, or try again later." 
-        });
-      }
-      
-      // Handle other OpenAI API errors
-      if (error.status >= 400 && error.status < 500) {
-        return res.status(error.status).json({ 
-          message: `OpenAI API Error: ${error.message}` 
+          message: "ElevenLabs API error. Please check your API key and quota." 
         });
       }
       

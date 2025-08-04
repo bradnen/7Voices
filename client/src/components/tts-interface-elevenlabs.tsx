@@ -167,8 +167,13 @@ export default function TTSInterfaceElevenLabs() {
                 voices.map((voice) => (
                   <SelectItem key={voice.id} value={voice.id} className="py-3">
                     <div className="flex items-center justify-between w-full">
-                      <span className="font-medium">{voice.name}</span>
-                      <span className="text-xs text-gray-500 ml-2">AI Voice</span>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{voice.name}</span>
+                        <span className="text-xs text-gray-500">{voice.description}</span>
+                      </div>
+                      <span className="text-xs text-purple-600 ml-2 bg-purple-50 px-2 py-1 rounded">
+                        {voice.category || 'Premium'}
+                      </span>
                     </div>
                   </SelectItem>
                 ))

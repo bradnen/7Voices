@@ -1,5 +1,5 @@
 import Navigation from "@/components/navigation";
-import TtsInterface from "@/components/tts-interface";
+import TTSInterfaceElevenLabs from "@/components/tts-interface-elevenlabs";
 import FeaturesSection from "@/components/features-section";
 import TestimonialsSection from "@/components/testimonials-section";
 import PricingSection from "@/components/pricing-section";
@@ -11,20 +11,20 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50">
       <Navigation />
       
-      {/* Hero Section */}
-      <div className="gradient-navy text-white">
+      {/* Hero Section - ElevenLabs Style */}
+      <div className="bg-gradient-to-br from-purple-50 via-white to-violet-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="text-center mb-16">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              Transform Text to{" "}
-              <span className="text-turquoise-400">Natural Speech</span>
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-purple-600 via-violet-600 to-purple-700 bg-clip-text text-transparent">
+              Transform Text into{" "}
+              <span className="block">Lifelike Speech</span>
             </h1>
-            <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto">
-              Experience the most advanced AI-powered text-to-speech technology with lifelike voices and complete customization control.
+            <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
+              Generate natural, human-like speech from text using advanced AI. Perfect for content creation, accessibility, and professional applications.
             </p>
           </div>
 
-          <TtsInterface />
+          <TTSInterfaceElevenLabs />
         </div>
       </div>
 

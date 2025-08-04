@@ -66,8 +66,8 @@ export default function PricingSection() {
           </div>
 
           {/* Premium Tier */}
-          <div className="gradient-turquoise rounded-2xl p-8 text-white relative">
-            <div className="absolute top-4 right-4 bg-white text-turquoise-500 px-3 py-1 rounded-full text-sm font-semibold">
+          <div className="bg-gradient-to-br from-purple-600 via-violet-600 to-purple-700 rounded-2xl p-8 text-white relative">
+            <div className="absolute top-4 right-4 bg-white text-purple-600 px-3 py-1 rounded-full text-sm font-semibold">
               Most Popular
             </div>
             <div className="text-center mb-8">
@@ -87,7 +87,7 @@ export default function PricingSection() {
             </ul>
             <Button 
               variant="secondary"
-              className="w-full bg-white text-turquoise-500 py-3 font-semibold hover:bg-gray-100"
+              className="w-full bg-white text-purple-600 py-3 font-semibold hover:bg-gray-100 border-2 border-white"
               onClick={() => window.location.href = '/subscribe?plan=premium'}
               data-testid="subscribe-premium"
             >

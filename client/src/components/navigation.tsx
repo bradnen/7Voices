@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Menu, X, Github, User, LogOut } from "lucide-react";
+import { Menu, X, Mail, User, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -12,6 +12,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { EmailLogin } from "./email-login";
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -26,9 +34,7 @@ export default function Navigation() {
     },
   });
 
-  const handleSignIn = () => {
-    window.location.href = "/api/auth/github";
-  };
+  const [showEmailLogin, setShowEmailLogin] = useState(false);
 
   return (
     <nav className="bg-white/80 backdrop-blur-md shadow-sm border-b border-gray-100 sticky top-0 z-50">
@@ -109,15 +115,15 @@ export default function Navigation() {
                     variant="outline" 
                     size="sm"
                     className="border-gray-300 text-gray-700 hover:text-black hover:border-black"
-                    onClick={handleSignIn}
+                    onClick={() => setShowEmailLogin(true)}
                   >
-                    <Github className="w-4 h-4 mr-2" />
+                    <Mail className="w-4 h-4 mr-2" />
                     Log in
                   </Button>
                   <Button 
                     size="sm"
                     className="bg-black text-white hover:bg-gray-800 rounded-lg"
-                    onClick={handleSignIn}
+                    onClick={() => setShowEmailLogin(true)}
                   >
                     Sign up
                   </Button>
@@ -181,12 +187,14 @@ export default function Navigation() {
                   variant="outline" 
                   size="sm"
                   className="border-gray-300 text-gray-700 hover:text-black hover:border-black"
+                  onClick={() => setShowEmailLogin(true)}
                 >
                   Log in
                 </Button>
                 <Button 
                   size="sm"
                   className="bg-black text-white hover:bg-gray-800 rounded-lg"
+                  onClick={() => setShowEmailLogin(true)}
                 >
                   Sign up
                 </Button>
@@ -195,6 +203,19 @@ export default function Navigation() {
           </div>
         )}
       </div>
+
+      {/* Email Login Dialog */}
+      <Dialog open={showEmailLogin} onOpenChange={setShowEmailLogin}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Welcome to 7Voice</DialogTitle>
+            <DialogDescription>
+              Sign in with your email to access premium features and save your voice generation history.
+            </DialogDescription>
+          </DialogHeader>
+          <EmailLogin onLoginSuccess={() => setShowEmailLogin(false)} />
+        </DialogContent>
+      </Dialog>
     </nav>
   );
 }

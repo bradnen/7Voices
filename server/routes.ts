@@ -5,7 +5,7 @@ import { storage } from "./storage";
 import { insertTtsRequestSchema } from "@shared/schema";
 import { z } from "zod";
 import Stripe from "stripe";
-import passport from "passport";
+
 import twilio from "twilio";
 
 // ElevenLabs API configuration
@@ -345,29 +345,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // GitHub authentication routes
-  app.get("/api/auth/github", 
-    passport.authenticate("github", { scope: ["user:email"] })
-  );
+  // Email authentication routes
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email || !email.includes('@')) {
+        return res.status(400).json({ message: "Valid email required" });
+      }
 
-  app.get("/api/auth/github/callback",
-    passport.authenticate("github", { failureRedirect: "/" }),
-    (req, res) => {
-      res.redirect("/dashboard");
+      // Check if user exists, create if not
+      let user = await storage.getUserByEmail(email);
+      
+      if (!user) {
+        // Create new user
+        user = await storage.createUser({
+          email,
+          username: email.split('@')[0],
+          displayName: email.split('@')[0],
+          subscriptionPlan: "free",
+          subscriptionStatus: "inactive"
+        });
+      }
+
+      // Set session
+      (req.session as any).userId = user.id;
+      res.json({ user, message: "Logged in successfully" });
+    } catch (error: any) {
+      console.error("Login error:", error);
+      res.status(500).json({ message: "Login failed" });
     }
-  );
+  });
 
   app.get("/api/auth/user", requireAuth, async (req: any, res) => {
     res.json(req.user);
   });
 
   app.post("/api/auth/logout", (req, res) => {
-    req.logout((err: any) => {
-      if (err) {
-        return res.status(500).json({ message: "Logout failed" });
-      }
+    if (req.session) {
+      req.session.destroy((err: any) => {
+        if (err) {
+          return res.status(500).json({ message: "Logout failed" });
+        }
+        res.json({ message: "Logged out successfully" });
+      });
+    } else {
       res.json({ message: "Logged out successfully" });
-    });
+    }
   });
 
   // TTS History endpoint

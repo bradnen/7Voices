@@ -40,12 +40,11 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// User storage table with GitHub OAuth support
+// User storage table with email authentication
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  githubId: varchar("github_id").unique(),
   username: varchar("username"),
-  email: varchar("email"),
+  email: varchar("email").unique().notNull(),
   displayName: varchar("display_name"),
   avatarUrl: varchar("avatar_url"),
   subscriptionPlan: varchar("subscription_plan").default("free"),
@@ -57,7 +56,6 @@ export const users = pgTable("users", {
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
-  githubId: true,
   username: true,
   email: true,
   displayName: true,

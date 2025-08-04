@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
-  getUserByGithubId(githubId: string): Promise<User | undefined>;
+
   createUser(user: InsertUser): Promise<User>;
   upsertUser(user: InsertUser): Promise<User>;
   updateUserStripeInfo(id: string, stripeInfo: {
@@ -31,10 +31,7 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
-  async getUserByGithubId(githubId: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.githubId, githubId));
-    return user || undefined;
-  }
+
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db
@@ -49,7 +46,7 @@ export class DatabaseStorage implements IStorage {
       .insert(users)
       .values(userData)
       .onConflictDoUpdate({
-        target: users.githubId,
+        target: users.email,
         set: {
           ...userData,
           updatedAt: new Date(),

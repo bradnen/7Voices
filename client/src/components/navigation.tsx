@@ -51,24 +51,23 @@ export default function Navigation() {
           
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-8">
-              <a 
-                href="#features" 
-                className="text-gray-600 hover:text-black px-3 py-2 text-sm font-medium transition-colors"
-              >
+              <Link href="/" className="text-gray-600 hover:text-black px-3 py-2 text-sm font-medium transition-colors">
                 Text to Speech
-              </a>
-              <a 
-                href="#pricing" 
-                className="text-gray-600 hover:text-black px-3 py-2 text-sm font-medium transition-colors"
+              </Link>
+              <button 
+                className="text-gray-400 px-3 py-2 text-sm font-medium cursor-not-allowed"
+                disabled
+                title="Coming Soon"
               >
                 Speech to Text
-              </a>
-              <a 
-                href="#about" 
-                className="text-gray-600 hover:text-black px-3 py-2 text-sm font-medium transition-colors"
+              </button>
+              <button 
+                className="text-gray-400 px-3 py-2 text-sm font-medium cursor-not-allowed"
+                disabled
+                title="Coming Soon"
               >
                 Voice Cloning
-              </a>
+              </button>
               <Link href="/subscribe" className="text-gray-600 hover:text-black px-3 py-2 text-sm font-medium transition-colors">
                 Pricing
               </Link>
@@ -154,34 +153,34 @@ export default function Navigation() {
         {isMenuOpen && (
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200">
-              <a 
-                href="#features" 
+              <Link 
+                href="/" 
                 className="text-gray-600 hover:text-black block px-3 py-2 text-base font-medium"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Text to Speech
-              </a>
-              <a 
-                href="#pricing" 
-                className="text-gray-600 hover:text-black block px-3 py-2 text-base font-medium"
-                onClick={() => setIsMenuOpen(false)}
+              </Link>
+              <button 
+                className="text-gray-400 block px-3 py-2 text-base font-medium cursor-not-allowed w-full text-left"
+                disabled
+                title="Coming Soon"
               >
                 Speech to Text
-              </a>
-              <a 
-                href="#about" 
-                className="text-gray-600 hover:text-black block px-3 py-2 text-base font-medium"
-                onClick={() => setIsMenuOpen(false)}
+              </button>
+              <button 
+                className="text-gray-400 block px-3 py-2 text-base font-medium cursor-not-allowed w-full text-left"
+                disabled
+                title="Coming Soon"
               >
                 Voice Cloning
-              </a>
-              <a 
-                href="#pricing" 
+              </button>
+              <Link 
+                href="/subscribe" 
                 className="text-gray-600 hover:text-black block px-3 py-2 text-base font-medium"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Pricing
-              </a>
+              </Link>
               <div className="mt-2 flex flex-col space-y-2">
                 <Button 
                   variant="outline" 

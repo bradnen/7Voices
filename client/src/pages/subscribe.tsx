@@ -31,7 +31,7 @@ const SubscribeForm = ({ clientSecret }: { clientSecret: string }) => {
     const { error } = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        return_url: `${window.location.origin}/dashboard`,
+        return_url: `${window.location.origin}/dashboard?payment=success`,
       },
     });
 
@@ -40,6 +40,11 @@ const SubscribeForm = ({ clientSecret }: { clientSecret: string }) => {
         title: "Payment Failed",
         description: error.message,
         variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Payment Successful",
+        description: "Welcome to your new plan! Redirecting...",
       });
     }
     
@@ -111,12 +116,12 @@ export default function Subscribe() {
     }
   ];
 
-  const handleSelectPlan = async (plan: typeof plans[0]) => {
-    setSelectedPlan(plan.id);
+  const handleSelectPlan = async (planId: string) => {
+    setSelectedPlan(planId);
     
     try {
       const response = await apiRequest("POST", "/api/stripe/create-subscription", { 
-        priceId: plan.priceId 
+        plan: planId 
       });
       const data = await response.json();
       
@@ -140,7 +145,7 @@ export default function Subscribe() {
         <div className="container mx-auto px-4">
           <div className="text-center mb-8">
             <Link href="/" className="text-sm text-gray-600 hover:text-gray-900">
-              ← Back to 7Voice
+              ← Back to 7Voices
             </Link>
           </div>
           <Elements stripe={stripePromise} options={{ clientSecret }}>
@@ -156,7 +161,7 @@ export default function Subscribe() {
       <div className="container mx-auto px-4">
         <div className="text-center mb-8">
           <Link href="/" className="text-sm text-gray-600 hover:text-gray-900">
-            ← Back to 7Voice
+            ← Back to 7Voices
           </Link>
           <h1 className="text-4xl font-bold text-gray-900 mt-4 mb-2">
             Choose Your Plan
@@ -199,7 +204,7 @@ export default function Subscribe() {
                 </ul>
                 
                 <Button 
-                  onClick={() => handleSelectPlan(plan)}
+                  onClick={() => handleSelectPlan(plan.id)}
                   className="w-full"
                   variant={plan.popular ? "default" : "outline"}
                   disabled={selectedPlan === plan.id}

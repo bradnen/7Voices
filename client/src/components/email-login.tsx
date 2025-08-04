@@ -33,7 +33,7 @@ export function EmailLogin({ onLoginSuccess }: EmailLoginProps) {
     setIsLoading(true);
 
     try {
-      await apiRequest("POST", "/api/auth/login", { email });
+      await apiRequest("POST", "/api/auth/login", { email, password });
       
       // Invalidate user query to refresh auth state
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });

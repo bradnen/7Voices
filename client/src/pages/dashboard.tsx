@@ -22,7 +22,7 @@ export default function Dashboard() {
   });
 
   const { data: subscriptionStatus } = useQuery({
-    queryKey: ["/api/stripe/subscription-status"],
+    queryKey: ["/api/subscription/status"],
     enabled: !!user,
   });
 

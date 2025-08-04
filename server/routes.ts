@@ -265,19 +265,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      const { priceId } = req.body;
+      const { plan } = req.body; // 'pro' or 'premium'
       const userId = req.user?.id;
       
       if (!userId) {
         return res.status(401).json({ message: "User not authenticated" });
       }
 
-      // Get or create customer
+      // Get user
       let user = await storage.getUser(userId);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
 
+      // Check if user already has an active subscription
+      if (user.stripeSubscriptionId && user.subscriptionStatus === 'active') {
+        return res.status(400).json({ message: "User already has an active subscription" });
+      }
+
+      // Create or get customer
       let customerId = user.stripeCustomerId;
       if (!customerId) {
         const customer = await stripe.customers.create({
@@ -288,29 +294,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.updateUserStripeInfo(userId, { stripeCustomerId: customerId });
       }
 
+      // Create price for the plan (these would normally be configured in Stripe Dashboard)
+      const priceData = plan === 'pro' 
+        ? { unit_amount: 999, nickname: 'Pro Plan' } // $9.99
+        : { unit_amount: 1999, nickname: 'Premium Plan' }; // $19.99
+
+      const price = await stripe.prices.create({
+        unit_amount: priceData.unit_amount,
+        currency: 'usd',
+        recurring: { interval: 'month' },
+        product_data: {
+          name: `7Voices ${priceData.nickname}`,
+          metadata: { plan }
+        },
+        metadata: { plan }
+      });
+
       // Create subscription
       const subscription = await stripe.subscriptions.create({
         customer: customerId,
-        items: [{ price: priceId }],
+        items: [{ price: price.id }],
         payment_behavior: 'default_incomplete',
         expand: ['latest_invoice.payment_intent'],
+        metadata: { userId, plan }
       });
 
       // Update user with subscription info
-      const planType = priceId.includes('pro') ? 'pro' : 'premium';
       await storage.updateUserStripeInfo(userId, {
         stripeSubscriptionId: subscription.id,
         subscriptionStatus: subscription.status,
-        subscriptionPlan: planType
+        subscriptionPlan: plan
       });
 
-      // Send SMS notification for successful subscription creation
-      const planAmount = planType === 'pro' ? 9.99 : 19.99;
-      await sendPaymentNotification(user.email || 'Unknown', planType, planAmount);
+      const clientSecret = (subscription.latest_invoice as any)?.payment_intent?.client_secret;
 
       res.json({
         subscriptionId: subscription.id,
-        clientSecret: (subscription.latest_invoice as any)?.payment_intent?.client_secret,
+        clientSecret,
+        plan,
+        amount: priceData.unit_amount / 100
       });
     } catch (error: any) {
       console.error("Subscription creation error:", error);
@@ -369,6 +391,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Set session
       (req.session as any).userId = user.id;
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((err: any) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
       res.json({ user, message: "Logged in successfully" });
     } catch (error: any) {
       console.error("Login error:", error);
@@ -410,6 +438,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Set session
       (req.session as any).userId = user.id;
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((err: any) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
       res.json({ user, message: "Account created successfully" });
     } catch (error: any) {
       console.error("Signup error:", error);
@@ -419,6 +453,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/auth/user", requireAuth, async (req: any, res) => {
     res.json(req.user);
+  });
+
+  app.get("/api/subscription/status", requireAuth, async (req: any, res) => {
+    try {
+      const user = req.user;
+      res.json({
+        subscriptionPlan: user.subscriptionPlan || 'free',
+        subscriptionStatus: user.subscriptionStatus || 'inactive',
+        hasActiveSubscription: user.subscriptionStatus === 'active' && user.subscriptionPlan !== 'free'
+      });
+    } catch (error: any) {
+      console.error("Error checking subscription status:", error);
+      res.status(500).json({ message: "Error checking subscription status" });
+    }
   });
 
   app.post("/api/auth/logout", (req, res) => {
@@ -480,21 +528,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     // Handle the event
     switch (event.type) {
-      case 'payment_intent.succeeded':
-        const paymentIntent = event.data.object;
-        console.log('Payment succeeded:', paymentIntent.id);
+      case 'customer.subscription.created':
+      case 'customer.subscription.updated':
+        const subscription = event.data.object;
+        console.log('Subscription event:', subscription.id, subscription.status);
         
-        // Try to find the user and send notification
         try {
-          if (paymentIntent.customer) {
-            const customer = await stripe.customers.retrieve(paymentIntent.customer as string);
-            const email = (customer as any).email || 'Unknown';
-            const amount = paymentIntent.amount / 100; // Convert from cents
+          // Find user by Stripe customer ID
+          const customer = await stripe.customers.retrieve(subscription.customer as string);
+          const userId = (customer as any).metadata?.userId;
+          
+          if (userId) {
+            // Determine plan type from subscription items
+            const planType = subscription.items.data[0]?.price?.metadata?.plan || 
+                           (subscription.items.data[0]?.price?.unit_amount === 999 ? 'pro' : 'premium');
             
-            await sendPaymentNotification(email, 'subscription', amount);
+            // Update user subscription status
+            await storage.updateUserStripeInfo(userId, {
+              stripeSubscriptionId: subscription.id,
+              subscriptionStatus: subscription.status,
+              subscriptionPlan: planType
+            });
+            
+            console.log(`Updated user ${userId} subscription to ${planType} (${subscription.status})`);
           }
         } catch (error) {
-          console.error('Error processing payment notification:', error);
+          console.error('Error updating user subscription:', error);
         }
         break;
         
@@ -502,17 +561,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const invoice = event.data.object;
         console.log('Invoice payment succeeded:', invoice.id);
         
-        // Send notification for recurring payments
+        // Send notification for subscription payments
         try {
-          if (invoice.customer) {
+          if (invoice.customer && invoice.subscription) {
             const customer = await stripe.customers.retrieve(invoice.customer as string);
+            const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
+            const userId = (customer as any).metadata?.userId;
+            
+            if (userId) {
+              // Update subscription status to active
+              const planType = subscription.items.data[0]?.price?.unit_amount === 999 ? 'pro' : 'premium';
+              await storage.updateUserStripeInfo(userId, {
+                subscriptionStatus: 'active',
+                subscriptionPlan: planType
+              });
+            }
+            
             const email = (customer as any).email || 'Unknown';
             const amount = invoice.amount_paid / 100; // Convert from cents
+            const planName = subscription.items.data[0]?.price?.unit_amount === 999 ? 'Pro' : 'Premium';
             
-            await sendPaymentNotification(email, 'recurring payment', amount);
+            await sendPaymentNotification(email, `${planName} Plan`, amount);
           }
         } catch (error) {
           console.error('Error processing invoice notification:', error);
+        }
+        break;
+        
+      case 'customer.subscription.deleted':
+        const deletedSub = event.data.object;
+        console.log('Subscription cancelled:', deletedSub.id);
+        
+        try {
+          const customer = await stripe.customers.retrieve(deletedSub.customer as string);
+          const userId = (customer as any).metadata?.userId;
+          
+          if (userId) {
+            // Downgrade to free plan
+            await storage.updateUserStripeInfo(userId, {
+              subscriptionStatus: 'cancelled',
+              subscriptionPlan: 'free'
+            });
+          }
+        } catch (error) {
+          console.error('Error handling subscription cancellation:', error);
         }
         break;
         

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
+import AuthButton from "@/components/auth-button";
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -34,9 +35,7 @@ export default function Navigation() {
               >
                 About
               </a>
-              <button className="bg-turquoise-500 hover:bg-turquoise-400 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors">
-                Get Started
-              </button>
+              <AuthButton />
             </div>
           </div>
           
@@ -75,9 +74,9 @@ export default function Navigation() {
               >
                 About
               </a>
-              <button className="w-full text-left bg-turquoise-500 hover:bg-turquoise-400 text-white px-3 py-2 rounded-lg text-base font-medium transition-colors mt-2">
-                Get Started
-              </button>
+              <div className="mt-2">
+                <AuthButton />
+              </div>
             </div>
           </div>
         )}

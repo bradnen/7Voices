@@ -1,10 +1,12 @@
 import type { Express } from "express";
+import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertTtsRequestSchema } from "@shared/schema";
 import { z } from "zod";
 import Stripe from "stripe";
 import passport from "passport";
+import twilio from "twilio";
 
 // ElevenLabs API configuration
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
@@ -16,6 +18,33 @@ if (!ELEVENLABS_API_KEY) {
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-07-30.basil",
 }) : null;
+
+// Initialize Twilio
+const twilioClient = process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN 
+  ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
+  : null;
+
+// SMS notification function
+async function sendPaymentNotification(userEmail: string, plan: string, amount: number) {
+  if (!twilioClient || !process.env.TWILIO_PHONE_NUMBER || !process.env.DTAC_PHONE_NUMBER) {
+    console.log("Twilio not configured, skipping SMS notification");
+    return;
+  }
+
+  try {
+    const message = `🎉 New 7Voice payment!\n\nUser: ${userEmail}\nPlan: ${plan}\nAmount: $${amount}\n\nPayment completed successfully.`;
+    
+    await twilioClient.messages.create({
+      body: message,
+      from: process.env.TWILIO_PHONE_NUMBER,
+      to: process.env.DTAC_PHONE_NUMBER,
+    });
+    
+    console.log("Payment notification sent to DTAC number");
+  } catch (error) {
+    console.error("Failed to send SMS notification:", error);
+  }
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup GitHub authentication
@@ -267,11 +296,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Update user with subscription info
+      const planType = priceId.includes('pro') ? 'pro' : 'premium';
       await storage.updateUserStripeInfo(userId, {
         stripeSubscriptionId: subscription.id,
         subscriptionStatus: subscription.status,
-        subscriptionPlan: priceId.includes('pro') ? 'pro' : 'premium'
+        subscriptionPlan: planType
       });
+
+      // Send SMS notification for successful subscription creation
+      const planAmount = planType === 'pro' ? 9.99 : 19.99;
+      await sendPaymentNotification(user.email || 'Unknown', planType, planAmount);
 
       res.json({
         subscriptionId: subscription.id,
@@ -350,6 +384,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error fetching TTS history:", error);
       res.status(500).json({ message: "Error fetching history" });
     }
+  });
+
+  // Test SMS endpoint for development
+  app.post("/api/test-sms", async (req, res) => {
+    try {
+      await sendPaymentNotification("test@example.com", "test plan", 9.99);
+      res.json({ message: "Test SMS sent successfully" });
+    } catch (error: any) {
+      console.error("Test SMS failed:", error);
+      res.status(500).json({ message: "Test SMS failed: " + error.message });
+    }
+  });
+
+  // Stripe webhook for payment confirmations
+  app.post('/api/stripe/webhook', express.raw({type: 'application/json'}), async (req, res) => {
+    if (!stripe) {
+      return res.status(501).json({ message: "Stripe not configured" });
+    }
+
+    const sig = req.headers['stripe-signature'];
+    let event;
+
+    try {
+      // In production, you should set STRIPE_WEBHOOK_SECRET
+      event = stripe.webhooks.constructEvent(req.body, sig as string, process.env.STRIPE_WEBHOOK_SECRET || 'whsec_test');
+    } catch (err: any) {
+      console.log(`Webhook signature verification failed.`, err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    // Handle the event
+    switch (event.type) {
+      case 'payment_intent.succeeded':
+        const paymentIntent = event.data.object;
+        console.log('Payment succeeded:', paymentIntent.id);
+        
+        // Try to find the user and send notification
+        try {
+          if (paymentIntent.customer) {
+            const customer = await stripe.customers.retrieve(paymentIntent.customer as string);
+            const email = (customer as any).email || 'Unknown';
+            const amount = paymentIntent.amount / 100; // Convert from cents
+            
+            await sendPaymentNotification(email, 'subscription', amount);
+          }
+        } catch (error) {
+          console.error('Error processing payment notification:', error);
+        }
+        break;
+        
+      case 'invoice.payment_succeeded':
+        const invoice = event.data.object;
+        console.log('Invoice payment succeeded:', invoice.id);
+        
+        // Send notification for recurring payments
+        try {
+          if (invoice.customer) {
+            const customer = await stripe.customers.retrieve(invoice.customer as string);
+            const email = (customer as any).email || 'Unknown';
+            const amount = invoice.amount_paid / 100; // Convert from cents
+            
+            await sendPaymentNotification(email, 'recurring payment', amount);
+          }
+        } catch (error) {
+          console.error('Error processing invoice notification:', error);
+        }
+        break;
+        
+      default:
+        console.log(`Unhandled event type ${event.type}`);
+    }
+
+    res.json({received: true});
   });
 
   const httpServer = createServer(app);

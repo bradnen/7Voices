@@ -4,50 +4,16 @@ import { useEffect, useState } from 'react';
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAuth } from "@/hooks/useAuth";
-import { Badge } from "@/components/ui/badge";
-import { Check } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Crown, Check } from "lucide-react";
+import { Link } from "wouter";
 
-// Initialize Stripe
-const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY 
-  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY)
-  : null;
-
-const PRICING_PLANS = {
-  pro: {
-    name: "Pro",
-    price: "$9.99",
-    priceId: "price_pro_monthly", // Replace with actual Stripe price ID
-    features: [
-      "1,000 characters per generation",
-      "All 6 premium voices",
-      "Advanced audio controls",
-      "MP3 downloads",
-      "Priority processing"
-    ]
-  },
-  premium: {
-    name: "Premium", 
-    price: "$19.99",
-    priceId: "price_premium_monthly", // Replace with actual Stripe price ID
-    features: [
-      "Unlimited characters",
-      "All premium voices",
-      "Advanced audio controls", 
-      "Multiple format downloads",
-      "Priority processing",
-      "API access",
-      "Commercial usage rights"
-    ]
-  }
-};
-
-interface CheckoutFormProps {
-  plan: 'pro' | 'premium';
+if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
+  console.warn('VITE_STRIPE_PUBLIC_KEY not found, payment will not work');
 }
+const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY ? loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY) : null;
 
-function CheckoutForm({ plan }: CheckoutFormProps) {
+const SubscribeForm = ({ clientSecret }: { clientSecret: string }) => {
   const stripe = useStripe();
   const elements = useElements();
   const { toast } = useToast();
@@ -55,196 +21,202 @@ function CheckoutForm({ plan }: CheckoutFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setIsLoading(true);
+
     if (!stripe || !elements) {
+      setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
+    const { error } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        return_url: `${window.location.origin}/dashboard`,
+      },
+    });
 
-    try {
-      const { error } = await stripe.confirmPayment({
-        elements,
-        confirmParams: {
-          return_url: `${window.location.origin}/?payment=success`,
-        },
-      });
-
-      if (error) {
-        toast({
-          title: "Payment Failed",
-          description: error.message,
-          variant: "destructive",
-        });
-      }
-    } catch (err: any) {
+    if (error) {
       toast({
         title: "Payment Failed",
-        description: err.message || "An unexpected error occurred",
+        description: error.message,
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
+    
+    setIsLoading(false);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <PaymentElement />
-      <Button 
-        type="submit" 
-        disabled={!stripe || isLoading} 
-        className="w-full bg-turquoise-500 hover:bg-turquoise-400"
-        data-testid="submit-payment"
-      >
-        {isLoading ? "Processing..." : `Subscribe to ${PRICING_PLANS[plan].name} ${PRICING_PLANS[plan].price}/month`}
-      </Button>
-    </form>
+    <div className="max-w-md mx-auto">
+      <Card>
+        <CardHeader className="text-center">
+          <Crown className="w-8 h-8 mx-auto mb-2 text-yellow-500" />
+          <CardTitle>Complete Your Subscription</CardTitle>
+          <CardDescription>Enter your payment details below</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <PaymentElement />
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={!stripe || isLoading}
+              data-testid="button-complete-payment"
+            >
+              {isLoading ? "Processing..." : "Complete Payment"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   );
-}
+};
 
-interface SubscriptionPageProps {
-  plan: 'pro' | 'premium';
-}
-
-function SubscriptionPage({ plan }: SubscriptionPageProps) {
+export default function Subscribe() {
   const [clientSecret, setClientSecret] = useState("");
+  const [selectedPlan, setSelectedPlan] = useState<string>("");
   const { toast } = useToast();
-  const planDetails = PRICING_PLANS[plan];
 
-  useEffect(() => {
-    // Create subscription with Stripe
-    apiRequest("POST", "/api/stripe/create-subscription", { 
-      priceId: planDetails.priceId 
-    })
-      .then((data) => {
-        setClientSecret(data.clientSecret);
-      })
-      .catch((error) => {
-        toast({
-          title: "Setup Failed",
-          description: error.message || "Failed to setup payment. Please try again.",
-          variant: "destructive",
-        });
+  const plans = [
+    {
+      id: "pro",
+      name: "Pro",
+      price: "$9.99",
+      period: "month",
+      features: [
+        "50,000 characters per month",
+        "10 premium voices",
+        "High-quality audio",
+        "Commercial usage rights",
+        "Priority support"
+      ],
+      priceId: "price_pro_monthly" // Replace with actual Stripe price ID
+    },
+    {
+      id: "premium",
+      name: "Premium", 
+      price: "$19.99",
+      period: "month",
+      features: [
+        "Unlimited characters",
+        "All premium voices",
+        "Highest quality audio",
+        "Commercial usage rights",
+        "Priority support",
+        "Advanced voice controls",
+        "API access"
+      ],
+      priceId: "price_premium_monthly", // Replace with actual Stripe price ID
+      popular: true
+    }
+  ];
+
+  const handleSelectPlan = async (plan: typeof plans[0]) => {
+    setSelectedPlan(plan.id);
+    
+    try {
+      const response = await apiRequest("POST", "/api/stripe/create-subscription", { 
+        priceId: plan.priceId 
       });
-  }, [planDetails.priceId, toast]);
+      const data = await response.json();
+      
+      if (data.clientSecret) {
+        setClientSecret(data.clientSecret);
+      } else {
+        throw new Error("No client secret received");
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create subscription",
+        variant: "destructive",
+      });
+    }
+  };
 
-  if (!stripePromise) {
+  if (clientSecret && stripePromise) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="text-center">Payment Not Available</CardTitle>
-            <CardDescription className="text-center">
-              Stripe is not configured for this environment.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    );
-  }
-
-  if (!clientSecret) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-turquoise-500 border-t-transparent rounded-full" />
+      <div className="min-h-screen bg-white py-12">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-8">
+            <Link href="/" className="text-sm text-gray-600 hover:text-gray-900">
+              ← Back to 7Voice
+            </Link>
+          </div>
+          <Elements stripe={stripePromise} options={{ clientSecret }}>
+            <SubscribeForm clientSecret={clientSecret} />
+          </Elements>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white py-12">
+      <div className="container mx-auto px-4">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-navy-900">Subscribe to 7Voice {planDetails.name}</h1>
-          <p className="text-gray-600 mt-2">Get unlimited access to premium text-to-speech features</p>
+          <Link href="/" className="text-sm text-gray-600 hover:text-gray-900">
+            ← Back to 7Voice
+          </Link>
+          <h1 className="text-4xl font-bold text-gray-900 mt-4 mb-2">
+            Choose Your Plan
+          </h1>
+          <p className="text-gray-600">
+            Unlock premium voices and unlimited generations
+          </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 items-start">
-          {/* Plan Details */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>{planDetails.name} Plan</CardTitle>
-                <Badge variant="secondary" className="bg-turquoise-100 text-turquoise-700">
-                  {planDetails.price}/month
-                </Badge>
-              </div>
-              <CardDescription>Everything you need for professional text-to-speech</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-3">
-                {planDetails.features.map((feature, index) => (
-                  <li key={index} className="flex items-center gap-3">
-                    <Check className="h-5 w-5 text-turquoise-500 flex-shrink-0" />
-                    <span className="text-gray-700">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
+        <div className="grid gap-8 md:grid-cols-2 max-w-4xl mx-auto">
+          {plans.map((plan) => (
+            <Card 
+              key={plan.id} 
+              className={`relative ${plan.popular ? 'ring-2 ring-black' : ''}`}
+            >
+              {plan.popular && (
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                  <span className="bg-black text-white text-xs px-3 py-1 rounded-full">
+                    Most Popular
+                  </span>
+                </div>
+              )}
+              
+              <CardHeader className="text-center">
+                <CardTitle className="text-2xl">{plan.name}</CardTitle>
+                <div className="text-3xl font-bold text-gray-900">
+                  {plan.price}
+                  <span className="text-sm font-normal text-gray-600">/{plan.period}</span>
+                </div>
+              </CardHeader>
+              
+              <CardContent className="space-y-6">
+                <ul className="space-y-3">
+                  {plan.features.map((feature, index) => (
+                    <li key={index} className="flex items-center gap-3">
+                      <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                      <span className="text-gray-700">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+                
+                <Button 
+                  onClick={() => handleSelectPlan(plan)}
+                  className="w-full"
+                  variant={plan.popular ? "default" : "outline"}
+                  disabled={selectedPlan === plan.id}
+                  data-testid={`button-select-${plan.id}`}
+                >
+                  {selectedPlan === plan.id ? "Processing..." : `Get ${plan.name}`}
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
 
-          {/* Payment Form */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Payment Details</CardTitle>
-              <CardDescription>Complete your subscription to get started</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Elements stripe={stripePromise} options={{ clientSecret }}>
-                <CheckoutForm plan={plan} />
-              </Elements>
-            </CardContent>
-          </Card>
+        <div className="text-center mt-12 text-sm text-gray-500">
+          <p>All plans include a 7-day free trial. Cancel anytime.</p>
+          <p className="mt-2">Payments are processed securely by Stripe.</p>
         </div>
       </div>
     </div>
   );
-}
-
-export default function Subscribe() {
-  const { isAuthenticated, isLoading } = useAuth();
-  const [selectedPlan, setSelectedPlan] = useState<'pro' | 'premium'>('pro');
-
-  // Get plan from URL params
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const plan = params.get('plan');
-    if (plan === 'pro' || plan === 'premium') {
-      setSelectedPlan(plan);
-    }
-  }, []);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-turquoise-500 border-t-transparent rounded-full" />
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="text-center">Sign In Required</CardTitle>
-            <CardDescription className="text-center">
-              Please sign in to subscribe to a premium plan.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-center">
-            <Button 
-              onClick={() => window.location.href = "/api/auth/google"}
-              className="bg-turquoise-500 hover:bg-turquoise-400"
-            >
-              Sign In with Google
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  return <SubscriptionPage plan={selectedPlan} />;
 }

@@ -36,7 +36,10 @@ export function EmailLogin({ onLoginSuccess }: EmailLoginProps) {
       await apiRequest("POST", "/api/auth/login", { email, password });
       
       // Invalidate user query to refresh auth state
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      
+      // Refetch user data to ensure it's updated
+      await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
       
       toast({
         title: "Welcome!",
@@ -50,7 +53,7 @@ export function EmailLogin({ onLoginSuccess }: EmailLoginProps) {
       // Redirect to dashboard after successful login
       setTimeout(() => {
         setLocation("/dashboard");
-      }, 500);
+      }, 1000); // Increased delay to ensure query completion
     } catch (error: any) {
       toast({
         title: "Login Failed",

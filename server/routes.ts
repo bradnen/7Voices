@@ -328,6 +328,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const clientSecret = (subscription.latest_invoice as any)?.payment_intent?.client_secret;
 
+      if (!clientSecret) {
+        return res.status(400).json({ message: "Unable to create payment intent for subscription" });
+      }
+
       res.json({
         subscriptionId: subscription.id,
         clientSecret,
@@ -563,9 +567,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Send notification for subscription payments
         try {
-          if (invoice.customer && invoice.subscription) {
+          if (invoice.customer && (invoice as any).subscription) {
             const customer = await stripe.customers.retrieve(invoice.customer as string);
-            const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
+            const subscription = await stripe.subscriptions.retrieve((invoice as any).subscription as string);
             const userId = (customer as any).metadata?.userId;
             
             if (userId) {

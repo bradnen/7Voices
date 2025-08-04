@@ -8,13 +8,32 @@ import { Separator } from "@/components/ui/separator";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Github, LogOut, Crown, Zap, Settings } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import type { TtsRequest } from "@shared/schema";
+import { useEffect } from "react";
 
 export default function Dashboard() {
   const { user, isLoading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [location] = useLocation();
+
+  // Check for payment success redirect
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('payment') === 'success') {
+      toast({
+        title: "Payment Successful!",
+        description: "Your subscription is now active. Welcome to your new plan!",
+      });
+      
+      // Clear the URL parameter
+      window.history.replaceState({}, '', '/dashboard');
+      
+      // Refresh subscription status
+      queryClient.invalidateQueries({ queryKey: ["/api/subscription/status"] });
+    }
+  }, [location, toast, queryClient]);
 
   const { data: ttsHistory } = useQuery<TtsRequest[]>({
     queryKey: ["/api/tts/history"],

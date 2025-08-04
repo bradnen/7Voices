@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Crown, Check } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 
 if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
   console.warn('VITE_STRIPE_PUBLIC_KEY not found, payment will not work');
@@ -18,6 +18,7 @@ const SubscribeForm = ({ clientSecret }: { clientSecret: string }) => {
   const elements = useElements();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [, setLocation] = useLocation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,8 +45,13 @@ const SubscribeForm = ({ clientSecret }: { clientSecret: string }) => {
     } else {
       toast({
         title: "Payment Successful",
-        description: "Welcome to your new plan! Redirecting...",
+        description: "Welcome to your new plan! Redirecting to dashboard...",
       });
+      
+      // Redirect to dashboard after successful payment
+      setTimeout(() => {
+        setLocation("/dashboard");
+      }, 1500);
     }
     
     setIsLoading(false);

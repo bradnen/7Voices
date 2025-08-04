@@ -16,6 +16,10 @@ Preferred communication style: Simple, everyday language.
 - Fixed database schema compatibility with existing columns
 - Implemented secure password hashing with bcrypt
 - Added password validation (minimum 6 characters) and proper error handling
+- Completed Stripe subscription integration for Pro ($9.99) and Premium ($19.99) plans
+- Added automatic redirect to dashboard after successful subscription payment
+- Implemented webhook handling for subscription status updates
+- Added SMS notifications to DTAC number after successful payments
 
 ## System Architecture
 

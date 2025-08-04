@@ -33,27 +33,17 @@ export function EmailLogin({ onLoginSuccess }: EmailLoginProps) {
     setIsLoading(true);
 
     try {
-      await apiRequest("POST", "/api/auth/login", { email, password });
+      const response = await apiRequest("POST", "/api/auth/login", { email, password });
       
-      // Invalidate user query to refresh auth state
-      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-      
-      // Refetch user data to ensure it's updated
-      await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
-      
-      toast({
-        title: "Welcome!",
-        description: "You've been logged in successfully",
-      });
+      if (response.ok) {
+        toast({
+          title: "Welcome!",
+          description: "Redirecting to dashboard...",
+        });
 
-      if (onLoginSuccess) {
-        onLoginSuccess();
+        // Force reload to ensure session cookie is properly set
+        window.location.href = "/dashboard";
       }
-
-      // Redirect to dashboard after successful login
-      setTimeout(() => {
-        setLocation("/dashboard");
-      }, 1000); // Increased delay to ensure query completion
     } catch (error: any) {
       toast({
         title: "Login Failed",

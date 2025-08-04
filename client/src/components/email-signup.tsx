@@ -33,27 +33,17 @@ export function EmailSignup({ onSignupSuccess }: EmailSignupProps) {
     setIsLoading(true);
 
     try {
-      await apiRequest("POST", "/api/auth/signup", { email, password });
+      const response = await apiRequest("POST", "/api/auth/signup", { email, password });
       
-      // Invalidate user query to refresh auth state
-      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-      
-      // Refetch user data to ensure it's updated
-      await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
-      
-      toast({
-        title: "Welcome to 7Voices!",
-        description: "Your account has been created successfully",
-      });
+      if (response.ok) {
+        toast({
+          title: "Welcome to 7Voices!",
+          description: "Account created! Redirecting to dashboard...",
+        });
 
-      if (onSignupSuccess) {
-        onSignupSuccess();
+        // Force reload to ensure session cookie is properly set
+        window.location.href = "/dashboard";
       }
-
-      // Redirect to dashboard after successful signup
-      setTimeout(() => {
-        setLocation("/dashboard");
-      }, 1000); // Increased delay to ensure query completion
     } catch (error: any) {
       toast({
         title: "Signup Failed",

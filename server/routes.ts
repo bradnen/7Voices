@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { insertTtsRequestSchema } from "@shared/schema";
 import { z } from "zod";
 import Stripe from "stripe";
+import bcrypt from "bcryptjs";
 
 import twilio from "twilio";
 
@@ -345,27 +346,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Email authentication routes
+  // Email and password authentication routes
   app.post("/api/auth/login", async (req, res) => {
     try {
-      const { email } = req.body;
+      const { email, password } = req.body;
       
-      if (!email || !email.includes('@')) {
-        return res.status(400).json({ message: "Valid email required" });
+      if (!email || typeof email !== 'string' || !password || typeof password !== 'string') {
+        return res.status(400).json({ message: "Email and password are required" });
       }
 
-      // Check if user exists, create if not
-      let user = await storage.getUserByEmail(email);
+      const user = await storage.getUserByEmail(email);
       
       if (!user) {
-        // Create new user
-        user = await storage.createUser({
-          email,
-          username: email.split('@')[0],
-          name: email.split('@')[0],
-          subscriptionPlan: "free",
-          subscriptionStatus: "inactive"
-        });
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+      // Verify password
+      const isValidPassword = await bcrypt.compare(password, user.password);
+      if (!isValidPassword) {
+        return res.status(401).json({ message: "Invalid email or password" });
       }
 
       // Set session
@@ -374,6 +373,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Login error:", error);
       res.status(500).json({ message: "Login failed" });
+    }
+  });
+
+  // Email signup endpoint
+  app.post("/api/auth/signup", async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || typeof email !== 'string' || !password || typeof password !== 'string') {
+        return res.status(400).json({ message: "Email and password are required" });
+      }
+
+      if (password.length < 6) {
+        return res.status(400).json({ message: "Password must be at least 6 characters long" });
+      }
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(409).json({ message: "User already exists with this email" });
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Create new user
+      const user = await storage.createUser({
+        email,
+        password: hashedPassword,
+        username: email.split('@')[0],
+        name: email.split('@')[0],
+        subscriptionPlan: "free",
+        subscriptionStatus: "inactive"
+      });
+
+      // Set session
+      (req.session as any).userId = user.id;
+      res.json({ user, message: "Account created successfully" });
+    } catch (error: any) {
+      console.error("Signup error:", error);
+      res.status(500).json({ message: "Account creation failed" });
     }
   });
 

@@ -13,6 +13,7 @@ interface EmailSignupProps {
 
 export function EmailSignup({ onSignupSuccess }: EmailSignupProps) {
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -69,7 +70,7 @@ export function EmailSignup({ onSignupSuccess }: EmailSignupProps) {
           Create Account
         </CardTitle>
         <CardDescription>
-          Join 7Voices to start generating natural speech
+          Create your account with email and password
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -85,11 +86,22 @@ export function EmailSignup({ onSignupSuccess }: EmailSignupProps) {
               className="w-full"
             />
           </div>
+          <div className="space-y-2">
+            <Input
+              type="password"
+              placeholder="Create a password (min 6 characters)"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={isLoading}
+              data-testid="input-signup-password"
+              className="w-full"
+            />
+          </div>
           
           <Button 
             type="submit" 
             className="w-full"
-            disabled={isLoading || !email}
+            disabled={isLoading || !email || !password}
             data-testid="button-signup"
           >
             {isLoading ? "Creating account..." : "Create Account"}

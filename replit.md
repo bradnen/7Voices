@@ -10,10 +10,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-- Switched from GitHub OAuth to email-based authentication (August 4, 2025)
+- Switched from GitHub OAuth to email and password authentication (August 4, 2025)
 - Renamed application from "7Voice" to "7Voices" throughout the project
 - Added automatic redirect to dashboard after successful login/signup
 - Fixed database schema compatibility with existing columns
+- Implemented secure password hashing with bcrypt
+- Added password validation (minimum 6 characters) and proper error handling
 
 ## System Architecture
 
@@ -34,13 +36,13 @@ Preferred communication style: Simple, everyday language.
 
 ### Data Models
 - **TTS Requests**: Stores text input, voice selection, speed, pitch, and tone parameters
-- **Users**: Complete user management with email-based authentication and Stripe subscription data
+- **Users**: Complete user management with email and password authentication, hashed passwords, and Stripe subscription data
 - **Voice Mapping**: Hardcoded mapping between user-friendly voice names and OpenAI voice IDs
 - **Subscriptions**: User subscription status, Stripe customer/subscription IDs, and plan information
 
 ### API Design
 - **TTS Endpoints**: `/api/tts/generate` for speech synthesis, `/api/tts/voices` for voice options
-- **Authentication**: `/api/auth/login` for email login, `/api/auth/user` for session management, `/api/auth/logout` for sign out
+- **Authentication**: `/api/auth/login` for email/password login, `/api/auth/signup` for account creation, `/api/auth/user` for session management, `/api/auth/logout` for sign out
 - **Payment Processing**: `/api/stripe/create-subscription`, `/api/stripe/subscription-status` for Stripe integration
 - **Request/Response**: JSON-based API with proper error handling and validation
 - **Audio Delivery**: Direct MP3 streaming with appropriate headers for file downloads

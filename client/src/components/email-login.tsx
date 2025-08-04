@@ -13,6 +13,7 @@ interface EmailLoginProps {
 
 export function EmailLogin({ onLoginSuccess }: EmailLoginProps) {
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -69,7 +70,7 @@ export function EmailLogin({ onLoginSuccess }: EmailLoginProps) {
           Sign In
         </CardTitle>
         <CardDescription>
-          Enter your email to access 7Voices
+          Enter your email and password to access 7Voices
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -85,11 +86,22 @@ export function EmailLogin({ onLoginSuccess }: EmailLoginProps) {
               className="w-full"
             />
           </div>
+          <div className="space-y-2">
+            <Input
+              type="password"
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={isLoading}
+              data-testid="input-password"
+              className="w-full"
+            />
+          </div>
           
           <Button 
             type="submit" 
             className="w-full"
-            disabled={isLoading || !email}
+            disabled={isLoading || !email || !password}
             data-testid="button-login"
           >
             {isLoading ? "Signing in..." : "Sign In"}

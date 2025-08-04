@@ -40,11 +40,12 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// User storage table with email authentication
+// User storage table with email and password authentication
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: varchar("username"),
   email: varchar("email").unique().notNull(),
+  password: varchar("password").notNull(), // Hashed password
   name: varchar("name"), // Maps to existing 'name' column
   profileImage: varchar("profile_image"), // Maps to existing 'profile_image' column
   displayName: varchar("display_name"),
@@ -60,6 +61,7 @@ export const users = pgTable("users", {
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   email: true,
+  password: true,
   name: true,
   profileImage: true,
   displayName: true,
